@@ -31,7 +31,8 @@ copies `autotuner.cfg` and `autotuner_menu.cfg` into
 [include autotuner.cfg]
 ```
 
-`autotuner.cfg` holds the `[gcode_macro TUNE]` that creates the button. If
+`autotuner.cfg` holds the `[gcode_macro …]` sections that create the
+buttons. If
 your printer also has an LCD screen, you can add
 `[include autotuner_menu.cfg]` to get the same list on the printer's display.
 
@@ -72,6 +73,15 @@ CoreXZ and hybrid kinematics.
 If you close a dialog by accident, click **TUNE** again to reopen the step
 that is waiting.
 
+Each item also has its own button in the Macros panel, which runs just that
+item (even if it is OFF in the list):
+
+| Button | Runs |
+|--------|------|
+| **TUNE_LIMITS** | Limit calibration |
+| **TUNE_INPUT_SHAPER** | Input shaper |
+| **TUNE_PROBE_OFFSETS** | Bed probe offsets |
+
 ### Printer LCD (optional)
 With `[include autotuner_menu.cfg]`, `Main → Auto Tune` on the display shows
 the same items (ON/OFF), Start, Continue, Abort, Jog X/Y/Z and the paper-test
@@ -84,7 +94,7 @@ controls.
 | `TUNE` | The macro button: opens the Auto Tune dialog (runs `TUNE_MENU`) |
 | `TUNE_MENU [CLOSE=1]` | Open (or close) the dialog. While a step is waiting, reopens that step's dialog |
 | `TUNE_ENABLE ITEM=<limits\|input_shaper\|probe_offsets> [ENABLE=0\|1]` | Enable/disable an item (toggles when `ENABLE` is omitted) |
-| `TUNE_START` | Run all enabled items |
+| `TUNE_START [ITEM=<name>[,<name>]]` | Run all enabled items, or only the named ones |
 | `TUNE_CONTINUE` | Confirm the current step |
 | `TUNE_ABORT` | Stop. Values from finished items stay pending until `SAVE_CONFIG` |
 | `TUNE_JOG [X=] [Y=] [Z=] [SPEED=]` | Move the toolhead relative to where it is (works before homing during the limit step) |

@@ -529,6 +529,17 @@ class AutoTunerTest(unittest.TestCase):
                       "TUNE_ENABLE ITEM=probe_offsets MENU=1|secondary",
                       sim.gcode.raw)
 
+    def test_start_single_item(self):
+        sim = Sim({'input_shaper': False, 'save_config': False})
+        # Runs even though input_shaper is OFF in the list
+        sim.gcode.cmd("TUNE_START ITEM=input_shaper")
+        self.assertEqual(sim.tuner.get_status()['item'], 'input_shaper')
+        sim.gcode.cmd("TUNE_CONTINUE")
+        self.assertFalse(sim.tuner.get_status()['active'])
+        self.assertEqual(sorted(sim.configfile.pending), ['input_shaper'])
+        with self.assertRaises(CommandError):
+            sim.gcode.cmd("TUNE_START ITEM=bogus")
+
     def test_menu_reopens_waiting_step(self):
         sim = Sim({'limits': False, 'input_shaper': False})
         sim.gcode.cmd("TUNE_START")

@@ -712,7 +712,19 @@ class AutoTuner:
             raise gcmd.error("Auto Tune is already running")
         self._check_not_printing(gcmd)
         manual_probe.verify_no_manual_probe(self.printer)
-        items = [name for name in ITEMS if self.enabled[name]]
+        raw = gcmd.get('ITEM', None)
+        if raw is not None:
+            # Run only the named items, even if they are switched off
+            names = set()
+            for r in raw.lower().split(','):
+                name = ITEM_ALIASES.get(r.strip())
+                if name is None:
+                    raise gcmd.error("Unknown item '%s', choose from: %s"
+                                     % (r.strip(), ", ".join(ITEMS)))
+                names.add(name)
+            items = [name for name in ITEMS if name in names]
+        else:
+            items = [name for name in ITEMS if self.enabled[name]]
         if not items:
             raise gcmd.error("All Auto Tune items are disabled")
         self._close_prompt()
