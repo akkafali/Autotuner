@@ -341,7 +341,7 @@ class Sim:
             self.configfile.set('input_shaper', 'shaper_type_' + axis, 'mzv')
             self.configfile.set('input_shaper', 'shaper_freq_' + axis,
                                 {'x': '52.4', 'y': '38.2'}[axis])
-        elif cmd in ('SAVE_CONFIG', 'ABORT'):
+        elif cmd in ('SAVE_CONFIG', 'ABORT', 'BLTOUCH_DEBUG'):
             if cmd == 'ABORT' and self.manual_probe_cb:
                 self.objects['manual_probe'].status = {}
                 cb, self.manual_probe_cb = self.manual_probe_cb, None
@@ -460,6 +460,12 @@ class AutoTunerTest(unittest.TestCase):
         self.assertEqual(th.pos[:2], [107.5, 120.])
         sim.gcode.cmd("TUNE_CONTINUE")
         self.assertEqual(sim.gcode.scripts[-1], "PROBE SAMPLES=1")
+        # Probe stays down on the note until the user confirms the mark
+        self.assertEqual(sim.gcode.display[-1], "Mark probe spot")
+        self.assertTrue(sim.tuner.get_status()['waiting'])
+        self.assertAlmostEqual(th.phys[2], Sim.PROBE_OFFSET[2])
+        sim.gcode.cmd("TUNE_CONTINUE")
+        self.assertAlmostEqual(th.phys[2], Sim.PROBE_OFFSET[2] + 5.)
         self.assertEqual(sim.gcode.display[-1], "Nozzle to mark")
         mark = sim.last_probe_xy
         # User moves the nozzle over the mark and lowers Z
@@ -484,7 +490,7 @@ class AutoTunerTest(unittest.TestCase):
     def test_probe_paper_test_abort(self):
         sim = Sim({'limits': False, 'input_shaper': False})
         sim.gcode.cmd("TUNE_START")
-        for i in range(3):
+        for i in range(4):
             sim.gcode.cmd("TUNE_CONTINUE")
         sim.gcode.cmd("TUNE_ABORT")
         self.assertFalse(sim.tuner.get_status()['active'])
@@ -499,7 +505,8 @@ class AutoTunerTest(unittest.TestCase):
         self.assertEqual(sim.tuner.get_status()['item'], 'input_shaper')
         sim.gcode.cmd("TUNE_CONTINUE")          # shaper Y -> post-it
         self.assertEqual(sim.tuner.get_status()['item'], 'probe_offsets')
-        sim.gcode.cmd("TUNE_CONTINUE")
+        sim.gcode.cmd("TUNE_CONTINUE")          # probe onto the post-it
+        sim.gcode.cmd("TUNE_CONTINUE")          # spot marked, probe up
         mark = sim.last_probe_xy
         self.jog_physical(sim, [mark[0], mark[1], 1.])
         sim.gcode.cmd("TUNE_CONTINUE")
@@ -539,6 +546,18 @@ class AutoTunerTest(unittest.TestCase):
         self.assertEqual(sorted(sim.configfile.pending), ['input_shaper'])
         with self.assertRaises(CommandError):
             sim.gcode.cmd("TUNE_START ITEM=bogus")
+
+    def test_probe_mark_gcode(self):
+        sim = Sim({'limits': False, 'input_shaper': False,
+                   'mark_gcode': 'BLTOUCH_DEBUG COMMAND=pin_down',
+                   'mark_done_gcode': 'BLTOUCH_DEBUG COMMAND=pin_up'})
+        sim.gcode.cmd("TUNE_START")
+        sim.gcode.cmd("TUNE_CONTINUE")
+        self.assertEqual(sim.gcode.scripts[-2:], [
+            "PROBE SAMPLES=1", "BLTOUCH_DEBUG COMMAND=pin_down"])
+        sim.gcode.cmd("TUNE_CONTINUE")
+        self.assertEqual(sim.gcode.scripts[-1],
+                         "BLTOUCH_DEBUG COMMAND=pin_up")
 
     def test_menu_reopens_waiting_step(self):
         sim = Sim({'limits': False, 'input_shaper': False})
