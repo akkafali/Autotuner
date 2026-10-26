@@ -97,6 +97,8 @@ class AutoTuner:
         self.probe_section = config.get('probe_section', None)
         self.probe_point = config.getfloatlist('probe_point', None, count=2)
         self.probe_lift = config.getfloat('probe_lift', 5., above=0.)
+        self.mark_gcode = config.get('mark_gcode', '')
+        self.mark_done_gcode = config.get('mark_done_gcode', '')
         # Runtime state
         self.sequence = None
         self.gcmd = None
@@ -592,16 +594,26 @@ class AutoTuner:
         yield WaitConfirm(
             "Probe offsets: post-it",
             ["Place a post-it note on the bed directly below the probe.",
-             "Press Continue and the probe will be lowered onto it to mark"
-             " its position."],
+             "Press Continue and the probe will be lowered onto it."],
             "Place post-it note")
         probe_x, probe_y, probe_z = self._probe(samples=1)
+        if self.mark_gcode.strip():
+            self._run(self.mark_gcode)
+        # The probe stays down until the user has marked its position
+        yield WaitConfirm(
+            "Probe offsets: mark the spot",
+            ["The probe is touching the post-it note.",
+             "Mark the spot under the probe tip (for example with a pen),"
+             " then press Continue to raise the probe."],
+            "Mark probe spot")
+        if self.mark_done_gcode.strip():
+            self._run(self.mark_done_gcode)
         self._lift(self.probe_lift)
         # Step 2: user moves the nozzle over the mark
         yield WaitConfirm(
             "Probe offsets: align nozzle",
-            ["Move the nozzle so it is exactly above the mark the probe left"
-             " on the post-it note.",
+            ["Move the nozzle so it is exactly above the mark on the"
+             " post-it note.",
              "Lower Z carefully to get a good view, then press Continue."],
             "Nozzle to mark", jog=True)
         pos = self._toolhead().get_position()

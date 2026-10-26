@@ -148,8 +148,11 @@ for printing.
 ### 3. Bed probe offsets
 1. The toolhead moves to the middle of the bed (`probe_point`). Put a post-it
    note under the probe and press **Continue**.
-2. The probe goes down onto the note, then moves up again. A touch probe
-   (BLTouch, CR-Touch, Klicky …) leaves a small mark.
+2. The probe goes down onto the note and **stays there**. Mark the spot
+   under the probe tip (for example with a pen) and press **Continue**. Only
+   then does the probe move up. `mark_gcode` / `mark_done_gcode` can run
+   G-Code while the probe waits on the note, for example to push a BLTouch
+   pin out (see `autotuner.cfg`).
 3. Move the nozzle exactly over the mark with the jog buttons and press
    **Continue**. `x_offset = nozzle X − probe X` and
    `y_offset = nozzle Y − probe Y`.
@@ -180,6 +183,8 @@ commented list:
 #probe_section:            # auto: probe, bltouch, smart_effector, ...
 #probe_point:              # default: bed centre
 #probe_lift: 5
+#mark_gcode:               # G-Code while the probe waits on the post-it
+#mark_done_gcode:          # G-Code after you confirm the mark
 #safe_z: 10
 #jog_speed: 50
 #travel_speed: 100
