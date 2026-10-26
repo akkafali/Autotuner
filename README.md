@@ -46,6 +46,7 @@ Fluidd:
 type: git_repo
 path: ~/Autotuner
 origin: https://github.com/akkafali/Autotuner.git
+primary_branch: main
 managed_services: klipper
 ```
 
