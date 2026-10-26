@@ -25,6 +25,11 @@ ITEM_TITLES = {
     'input_shaper': "Input shaper",
     'probe_offsets': "Bed probe offsets",
 }
+ITEM_HELP = {
+    'limits': "measure the length of each axis",
+    'input_shaper': "find and apply the best input shapers",
+    'probe_offsets': "measure the probe X/Y/Z offsets",
+}
 ITEM_ALIASES = {
     'limits': 'limits', 'limit': 'limits', 'limit_calibrate': 'limits',
     'input_shaper': 'input_shaper', 'shaper': 'input_shaper',
@@ -101,8 +106,11 @@ class AutoTuner:
         self.fake_homed = False
         self.free_jog = False
         self.results = []
-        # Register commands
-        cmds = [('TUNE', self.cmd_TUNE, "Show the Auto Tune menu"),
+        self.step_prompt = None
+        # Register commands. The TUNE button in Mainsail / Fluidd is a
+        # [gcode_macro TUNE] (see autotuner.cfg) that runs TUNE_MENU.
+        cmds = [('TUNE_MENU', self.cmd_TUNE_MENU,
+                 "Show the Auto Tune menu"),
                 ('TUNE_ENABLE', self.cmd_TUNE_ENABLE,
                  "Enable or disable an Auto Tune item"),
                 ('TUNE_START', self.cmd_TUNE_START,
@@ -208,7 +216,8 @@ class AutoTuner:
 
     # Menu (web prompt) listing all items
     def _show_menu(self):
-        lines = ["Select which calibrations to run, then press Start."]
+        lines = ["Click an item to switch it ON or OFF, then press Start."]
+        lines += ["%s: %s" % (ITEM_TITLES[n], ITEM_HELP[n]) for n in ITEMS]
         if self.sequence is not None:
             lines = ["Auto Tune is running: %s" % (self.message,)]
         buttons = [("%s: %s" % (ITEM_TITLES[n], "ON" if self.enabled[n]
@@ -216,7 +225,7 @@ class AutoTuner:
                     "TUNE_ENABLE ITEM=%s MENU=1" % (n,),
                     "primary" if self.enabled[n] else "secondary")
                    for n in ITEMS]
-        footer = [("Close", "TUNE CLOSE=1", "secondary")]
+        footer = [("Close", "TUNE_MENU CLOSE=1", "secondary")]
         if self.sequence is None:
             footer.append(("Start", "TUNE_START", "primary"))
         else:
@@ -263,7 +272,8 @@ class AutoTuner:
         footer += [("Abort", "TUNE_ABORT", "error"),
                    ("Continue", "TUNE_CONTINUE", "primary")]
         groups = self._jog_groups(fine=not req.motors_off) if req.jog else []
-        self._web_prompt(req.title, req.lines, groups, footer)
+        self.step_prompt = (req.title, req.lines, groups, footer)
+        self._web_prompt(*self.step_prompt)
     def _manual_probe_done(self, result):
         if self.sequence is None or self.waiting != 'manual_probe':
             return
@@ -656,9 +666,17 @@ class AutoTuner:
         if print_stats.get_status(eventtime).get('state') in ('printing',
                                                                'paused'):
             raise gcmd.error("Can't run Auto Tune during a print")
-    def cmd_TUNE(self, gcmd):
+    def cmd_TUNE_MENU(self, gcmd):
         if gcmd.get_int('CLOSE', 0):
             self._close_prompt()
+            return
+        if self.waiting == 'confirm' and self.step_prompt is not None:
+            # Re-open the dialog of the step that is waiting for the user
+            self._web_prompt(*self.step_prompt)
+            return
+        if self.waiting == 'manual_probe':
+            gcmd.respond_info("Auto Tune is waiting for the paper test: use"
+                              " TESTZ to move the nozzle, then ACCEPT")
             return
         lines = ["Auto Tune items:"]
         for i, name in enumerate(ITEMS):

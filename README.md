@@ -1,8 +1,9 @@
 # Autotuner – guided calibration for Klipper
 
-Autotuner adds an **Auto Tune** entry to the Klipper LCD menu and a pop-up
-dialog in Mainsail / Fluidd. It holds a list of calibrations. Each one can be
-switched on or off, and pressing **Start** runs the enabled ones in order:
+Autotuner adds a **TUNE** button to the Macros panel of **Mainsail** and
+**Fluidd**. Clicking it opens a dialog with a list of calibrations. Each one
+can be switched on or off, and pressing **Start** runs the enabled ones in
+order:
 
 | # | Item (`ITEM=`)   | What it does | Saved to |
 |---|------------------|--------------|----------|
@@ -28,8 +29,11 @@ copies `autotuner.cfg` and `autotuner_menu.cfg` into
 
 ```ini
 [include autotuner.cfg]
-[include autotuner_menu.cfg]   # only if the printer has an LCD ([display])
 ```
+
+`autotuner.cfg` holds the `[gcode_macro TUNE]` that creates the button. If
+your printer also has an LCD screen, you can add
+`[include autotuner_menu.cfg]` to get the same list on the printer's display.
 
 Then restart Klipper (`sudo systemctl restart klipper`).
 
@@ -44,34 +48,41 @@ origin: https://github.com/akkafali/Autotuner.git
 managed_services: klipper
 ```
 
-Requirements: Klipper running on Python 3. Input shaping needs a working
+Requirements: Klipper running on Python 3, and a Mainsail or Fluidd
+version that supports macro prompt dialogs (Mainsail 2.9 or newer, or a
+current Fluidd). Input shaping needs a working
 `[resonance_tester]` with an accelerometer. Probe offsets need a probe
 (`[probe]`, `[bltouch]`, …). Limit calibration supports cartesian, CoreXY,
 CoreXZ and hybrid kinematics.
 
 ## Usage
 
-### LCD
-`Main → Auto Tune` lists:
-
-* **Limits / Shaper / Probe ofs: ON|OFF**: click, turn, click to toggle.
-* **Start**: runs every enabled item.
-* While running: the current step, **Continue**, **Abort tune**, and
-  **Jog X/Y/Z** (pick a distance and click to move). There are also
-  **Motors off** (limit step) and **Test Z / Accept / Abort paper test**
-  (Z offset step).
-
 ### Mainsail / Fluidd
-Run `TUNE` in the console (or make a macro button for it). A dialog shows the
-items with ON/OFF buttons and a **Start** button. Every step that needs you
-opens a dialog with **Continue**, **Abort** and jog buttons. The paper test
-uses the normal manual-probe dialog.
+1. Click **TUNE** in the Macros panel on the dashboard (or type `TUNE` in
+   the console).
+2. The **Auto Tune** dialog lists the three items. Each one is a button
+   showing **ON** or **OFF**. Click it to switch it.
+3. Press **Start**. Every step that needs you opens a dialog with
+   **Continue** and **Abort** buttons, and jog buttons (X/Y/Z ±) where you
+   have to move the toolhead. The limit step also has a **Motors off**
+   button so you can move the axes by hand.
+4. For the Z offset paper test, Mainsail / Fluidd show their normal
+   manual-probe dialog (TESTZ buttons, Accept, Abort).
+
+If you close a dialog by accident, click **TUNE** again to reopen the step
+that is waiting.
+
+### Printer LCD (optional)
+With `[include autotuner_menu.cfg]`, `Main → Auto Tune` on the display shows
+the same items (ON/OFF), Start, Continue, Abort, Jog X/Y/Z and the paper-test
+controls.
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `TUNE` | List the items and open the web dialog (`TUNE CLOSE=1` closes it) |
+| `TUNE` | The macro button: opens the Auto Tune dialog (runs `TUNE_MENU`) |
+| `TUNE_MENU [CLOSE=1]` | Open (or close) the dialog. While a step is waiting, reopens that step's dialog |
 | `TUNE_ENABLE ITEM=<limits\|input_shaper\|probe_offsets> [ENABLE=0\|1]` | Enable/disable an item (toggles when `ENABLE` is omitted) |
 | `TUNE_START` | Run all enabled items |
 | `TUNE_CONTINUE` | Confirm the current step |

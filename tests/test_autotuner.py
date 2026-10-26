@@ -523,8 +523,23 @@ class AutoTunerTest(unittest.TestCase):
             sim.gcode.cmd("TUNE_START")
         with self.assertRaises(CommandError):
             sim.gcode.cmd("TUNE_ENABLE ITEM=bogus")
-        sim.gcode.cmd("TUNE")
+        sim.gcode.cmd("TUNE_MENU")
         self.assertIn("// action:prompt_begin Auto Tune", sim.gcode.raw)
+        self.assertIn("// action:prompt_button Bed probe offsets: OFF|"
+                      "TUNE_ENABLE ITEM=probe_offsets MENU=1|secondary",
+                      sim.gcode.raw)
+
+    def test_menu_reopens_waiting_step(self):
+        sim = Sim({'limits': False, 'input_shaper': False})
+        sim.gcode.cmd("TUNE_START")
+        sim.gcode.cmd("TUNE_MENU CLOSE=1")
+        self.assertEqual(sim.gcode.raw[-1], "// action:prompt_end")
+        del sim.gcode.raw[:]
+        sim.gcode.cmd("TUNE_MENU")
+        self.assertIn("// action:prompt_begin Probe offsets: post-it",
+                      sim.gcode.raw)
+        self.assertIn("// action:prompt_footer_button Continue|"
+                      "TUNE_CONTINUE|primary", sim.gcode.raw)
 
     def test_abort_limits_turns_motors_off(self):
         sim = Sim()

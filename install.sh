@@ -41,5 +41,5 @@ fi
 echo
 echo "Add to printer.cfg:"
 echo "  [include autotuner.cfg]"
-echo "  [include autotuner_menu.cfg]   # if you have an LCD"
+echo "  [include autotuner_menu.cfg]   # optional, only for a printer LCD"
 echo "then restart Klipper: sudo systemctl restart klipper"
