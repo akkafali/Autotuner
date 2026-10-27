@@ -1,15 +1,24 @@
-# Autotuner – guided calibration for Klipper
+# Klipper Auto Tune
 
-Autotuner adds a **TUNE** button to the Macros panel of **Mainsail** and
-**Fluidd**. Clicking it opens a dialog with a list of calibrations. Each one
-can be switched on or off, and pressing **Start** runs the enabled ones in
-order:
+**Klipper Auto Tune** (Autotuner) is a guided calibration plugin for Klipper
+3D printers. It adds a **TUNE** button to the Macros panel of **Mainsail**
+and **Fluidd**. Clicking it opens a dialog with a list of calibrations. Each
+one can be switched on or off, and pressing **Start** runs the enabled ones
+in order:
+
+- **Axis limit calibration:** measures the real travel of X, Y and Z and sets
+  `position_max`.
+- **Input shaper auto-tuning:** runs `SHAPER_CALIBRATE` with one or two
+  accelerometers (ADXL345, LIS2DW, MPU-9250 …) and applies the best shapers.
+- **Probe offset calibration:** finds the BLTouch / CR-Touch / inductive
+  probe `x_offset` and `y_offset` with a post-it note, and the `z_offset`
+  with a paper test.
 
 | # | Item (`ITEM=`)   | What it does | Saved to |
 |---|------------------|--------------|----------|
 | 1 | `limits`         | You move every axis to its far end. Each axis then travels to its endstop switch, and the distance is measured (the switch is 0). | `[stepper_x/y/z]` `position_max` (and `position_endstop`/`position_min`) |
 | 2 | `input_shaper`   | Runs `SHAPER_CALIBRATE` for X, then Y. With two accelerometers both run straight away. With one, it waits after X until you have moved the accelerometer to the Y axis and pressed Continue. The best shapers are applied. | `[input_shaper]` |
-| 3 | `probe_offsets`  | The probe marks a post-it note, you move the nozzle over the mark, and the X/Y probe offsets are calculated. The Z offset is then found with a paper test, the same way as `PROBE_CALIBRATE`. | `[probe]` / `[bltouch]` … `x_offset`, `y_offset`, `z_offset` |
+| 3 | `probe_offsets`  | The probe goes down onto a post-it note and waits while you mark the spot, you move the nozzle over the mark, and the X/Y probe offsets are calculated. The Z offset is then found with a paper test, the same way as `PROBE_CALIBRATE`. | `[probe]` / `[bltouch]` … `x_offset`, `y_offset`, `z_offset` |
 
 When everything is done, `SAVE_CONFIG` runs (this can be turned off) so all
 the new values are written to `printer.cfg` and Klipper restarts.
