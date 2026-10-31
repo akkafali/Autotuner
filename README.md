@@ -18,7 +18,7 @@ in order:
 |---|------------------|--------------|----------|
 | 1 | `limits`         | You move every axis to its far end. Each axis then travels to its endstop switch, and the distance is measured (the switch is 0). | `[stepper_x/y/z]` `position_max` (and `position_endstop`/`position_min`) |
 | 2 | `input_shaper`   | Runs `SHAPER_CALIBRATE` for X, then Y. With two accelerometers both run straight away. With one, it waits after X until you have moved the accelerometer to the Y axis and pressed Continue. The best shapers are applied. | `[input_shaper]` |
-| 3 | `probe_offsets`  | The probe goes down onto a post-it note and waits while you mark the spot, you move the nozzle over the mark, and the X/Y probe offsets are calculated. The Z offset is then found with a paper test, the same way as `PROBE_CALIBRATE`. | `[probe]` / `[bltouch]` … `x_offset`, `y_offset`, `z_offset` |
+| 3 | `probe_offsets`  | The probe goes down onto a post-it note and waits while you mark the spot. You then move the nozzle over the mark, and the X/Y probe offsets are calculated. The Z offset is found with a paper test, the same way as `PROBE_CALIBRATE`. | `[probe]` / `[bltouch]` … `x_offset`, `y_offset`, `z_offset` |
 
 When everything is done, `SAVE_CONFIG` runs (this can be turned off) so all
 the new values are written to `printer.cfg` and Klipper restarts.
@@ -27,8 +27,8 @@ the new values are written to `printer.cfg` and Klipper restarts.
 
 ```bash
 cd ~
-git clone https://github.com/akkafali/Autotuner.git
-cd Autotuner
+git clone https://github.com/akkafali/klipper-auto-tune.git
+cd klipper-auto-tune
 ./install.sh            # or: ./install.sh <klipper dir> <config dir>
 ```
 
@@ -41,9 +41,9 @@ copies `autotuner.cfg` and `autotuner_menu.cfg` into
 ```
 
 `autotuner.cfg` holds the `[gcode_macro …]` sections that create the
-buttons. If
-your printer also has an LCD screen, you can add
-`[include autotuner_menu.cfg]` to get the same list on the printer's display.
+buttons. If your printer also has an LCD screen, you can add
+`[include autotuner_menu.cfg]` to get the same list on the printer's
+display.
 
 Then restart Klipper (`sudo systemctl restart klipper`).
 
@@ -53,16 +53,16 @@ Fluidd:
 ```ini
 [update_manager autotuner]
 type: git_repo
-path: ~/Autotuner
-origin: https://github.com/akkafali/Autotuner.git
+path: ~/klipper-auto-tune
+origin: https://github.com/akkafali/klipper-auto-tune.git
 primary_branch: main
 managed_services: klipper
 ```
 
 Requirements: Klipper running on Python 3, and a Mainsail or Fluidd
 version that supports macro prompt dialogs (Mainsail 2.9 or newer, or a
-current Fluidd). Input shaping needs a working
-`[resonance_tester]` with an accelerometer. Probe offsets need a probe
+current Fluidd). Input shaping needs a working `[resonance_tester]` with
+an accelerometer. Probe offsets need a probe
 (`[probe]`, `[bltouch]`, …). Limit calibration supports cartesian, CoreXY,
 CoreXZ and hybrid kinematics.
 
