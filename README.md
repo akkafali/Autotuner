@@ -27,8 +27,8 @@ the new values are written to `printer.cfg` and Klipper restarts.
 
 ```bash
 cd ~
-git clone https://github.com/akkafali/Autotuner.git
-cd Autotuner
+git clone https://github.com/akkafali/klipper-auto-tune.git
+cd klipper-auto-tune
 ./install.sh            # or: ./install.sh <klipper dir> <config dir>
 ```
 
@@ -53,8 +53,8 @@ Fluidd:
 ```ini
 [update_manager autotuner]
 type: git_repo
-path: ~/Autotuner
-origin: https://github.com/akkafali/Autotuner.git
+path: ~/klipper-auto-tune
+origin: https://github.com/akkafali/klipper-auto-tune.git
 primary_branch: main
 managed_services: klipper
 ```
