@@ -518,6 +518,32 @@ class AutoTunerTest(unittest.TestCase):
                           'stepper_y', 'stepper_z'])
         self.assertEqual(sim.gcode.scripts.count("SAVE_CONFIG"), 1)
 
+    def test_bltouch_z_endstop_uses_new_z_offset(self):
+        # BLTouch is the Z endstop, but its configured z_offset (1.5) is wrong:
+        # it really triggers 2.0mm above the bed
+        sim = Sim({'input_shaper': False})
+        zrail = sim.toolhead.kin.rails[2]
+        zrail.hi = zrail.hi._replace(position_endstop=1.5)
+        th = sim.toolhead
+        sim.gcode.cmd("TUNE_START")
+        self.jog_physical(sim, [235., 0., 300.])
+        sim.gcode.cmd("TUNE_CONTINUE")
+        # Measured with the old z_offset: 1.5 + 298
+        self.assertEqual(sim.configfile.pending['stepper_z'],
+                         {'position_max': '299.500'})
+        sim.gcode.cmd("TUNE_CONTINUE")          # probe onto the post-it
+        sim.gcode.cmd("TUNE_CONTINUE")          # spot marked, probe up
+        mark = sim.last_probe_xy
+        self.jog_physical(sim, [mark[0], mark[1], 1.])
+        sim.gcode.cmd("TUNE_CONTINUE")
+        sim.gcode.cmd("TUNE_CONTINUE")
+        sim.accept_manual_probe(th.pos[2] - th.phys[2])
+        self.assertEqual(sim.configfile.pending['bltouch']['z_offset'],
+                         '2.000')
+        # Z max recalculated with the new z_offset: the real top is 300
+        self.assertEqual(sim.configfile.pending['stepper_z'],
+                         {'position_max': '300.000'})
+
     def test_enable_disable(self):
         sim = Sim()
         sim.gcode.cmd("TUNE_ENABLE ITEM=shaper ENABLE=0")

@@ -135,8 +135,11 @@ for use in macros and menus.
      `zero_at_switch: False` to keep your `position_endstop` and only set
      `position_max = position_endstop + length`.
    * Z with the switch at the minimum: `position_max = position_endstop +
-     length`. Your `position_endstop` (nozzle height) is not changed. With a
-     probe as the Z endstop, the probe's `z_offset` is used instead.
+     length`. Your `position_endstop` (nozzle height) is not changed.
+   * Z homed with a probe such as a BLTouch (`probe:z_virtual_endstop`):
+     `position_max = z_offset + length`. If **Probe offsets** runs in the
+     same session, `position_max` is recalculated with the newly measured
+     `z_offset`.
    * Any axis with the switch at the maximum: `position_endstop =
      position_max = position_min + length`.
 
