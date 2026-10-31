@@ -108,6 +108,9 @@ class AutoTuner:
         self.fake_homed = False
         self.free_jog = False
         self.results = []
+        # (stepper section, travel) when Z was measured with the probe as
+        # its endstop - position_max depends on the probe z_offset
+        self.z_probe_travel = None
         self.step_prompt = None
         # Register commands. The TUNE button in Mainsail / Fluidd is a
         # [gcode_macro TUNE] (see autotuner.cfg) that runs TUNE_MENU.
@@ -457,6 +460,8 @@ class AutoTuner:
                 x, y = self._safe_xy()
                 self._toolhead().manual_move([x, y], self.travel_speed)
             results[2] = self._measure_axis(2)
+            if self._z_uses_probe(rails[2]):
+                self.z_probe_travel = (rails[2].get_name(), results[2])
         else:
             self._run("G28 Z")
         self.fake_homed = False
@@ -667,6 +672,16 @@ class AutoTuner:
             "%s: %.3f" % v for v in values)))
         self._respond("Auto Tune: [%s] %s" % (section, ", ".join(
             "%s=%.3f" % v for v in values)))
+        if self.z_probe_travel is not None:
+            # Z homes with the probe, so the Z limit measured earlier was
+            # based on the old z_offset
+            z_section, travel = self.z_probe_travel
+            position_max = z_offset + travel
+            configfile.set(z_section, 'position_max', "%.3f" % (position_max,))
+            self.results.append("[%s] position_max: %.3f (updated for the new"
+                                " z_offset)" % (z_section, position_max))
+            self._respond("Auto Tune: [%s] position_max=%.3f (updated for the"
+                          " new z_offset)" % (z_section, position_max))
         self._set_display("Probe offsets done")
 
     # G-Code commands
@@ -741,6 +756,9 @@ class AutoTuner:
             raise gcmd.error("All Auto Tune items are disabled")
         self._close_prompt()
         self.results = []
+        # (stepper section, travel) when Z was measured with the probe as
+        # its endstop - position_max depends on the probe z_offset
+        self.z_probe_travel = None
         self.sequence = self._run_sequence(items)
         self._step(gcmd)
     def cmd_TUNE_CONTINUE(self, gcmd):
